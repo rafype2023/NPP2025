@@ -37,13 +37,24 @@ function updateBracket() {
   bracket.east.e3 = 'Celtics';
   bracket.east.e4 = 'Raptors';
 
-  // Update subsequent rounds based on selections
-  // First round opponents are set by Play-In
-  bracket.west.w5 = document.getElementById('w5').value || (bracket.west.w1 > document.getElementById('w1opp').textContent ? bracket.west.w1 : document.getElementById('w1opp').textContent);
-  bracket.west.w6 = document.getElementById('w6').value || (bracket.west.w2 > document.getElementById('w2opp').textContent ? bracket.west.w2 : document.getElementById('w2opp').textContent);
+  // First round winners (simplified as higher alphabetical order for now)
+  const w1Winner = document.getElementById('w1').value > document.getElementById('w1opp').textContent ? document.getElementById('w1').value : document.getElementById('w1opp').textContent;
+  const w2Winner = document.getElementById('w2').value > document.getElementById('w2opp').textContent ? document.getElementById('w2').value : document.getElementById('w2opp').textContent;
+  const w3Winner = document.getElementById('w3').value > document.getElementById('w3').value.split(' ')[1] ? document.getElementById('w3').value : document.getElementById('w3').value.split(' ')[1];
+  const w4Winner = document.getElementById('w4').value > document.getElementById('w4opp').textContent ? document.getElementById('w4').value : document.getElementById('w4opp').textContent;
+  const e1Winner = document.getElementById('e1').value > document.getElementById('e1opp').textContent ? document.getElementById('e1').value : document.getElementById('e1opp').textContent;
+  const e2Winner = document.getElementById('e2').value > document.getElementById('e2opp').textContent ? document.getElementById('e2').value : document.getElementById('e2opp').textContent;
+  const e3Winner = document.getElementById('e3').value > document.getElementById('e3').value.split(' ')[1] ? document.getElementById('e3').value : document.getElementById('e3').value.split(' ')[1];
+  const e4Winner = document.getElementById('e4').value > document.getElementById('e4opp').textContent ? document.getElementById('e4').value : document.getElementById('e4opp').textContent;
+
+  // Semifinals (1 vs. 8 vs. 3 vs. 6, 2 vs. 7 vs. 4 vs. 5)
+  bracket.west.w5 = document.getElementById('w5').value || (w1Winner > w3Winner ? w1Winner : w3Winner);
+  bracket.west.w6 = document.getElementById('w6').value || (w2Winner > w4Winner ? w2Winner : w4Winner);
+  bracket.east.e5 = document.getElementById('e5').value || (e1Winner > e3Winner ? e1Winner : e3Winner);
+  bracket.east.e6 = document.getElementById('e6').value || (e2Winner > e4Winner ? e2Winner : e4Winner);
+
+  // Conference Finals
   bracket.west.w7 = document.getElementById('w7').value || (bracket.west.w5 > bracket.west.w6 ? bracket.west.w5 : bracket.west.w6);
-  bracket.east.e5 = document.getElementById('e5').value || (bracket.east.e1 > document.getElementById('e1opp').textContent ? bracket.east.e1 : document.getElementById('e1opp').textContent);
-  bracket.east.e6 = document.getElementById('e6').value || (bracket.east.e2 > document.getElementById('e2opp').textContent ? bracket.east.e2 : document.getElementById('e2opp').textContent);
   bracket.east.e7 = document.getElementById('e7').value || (bracket.east.e5 > bracket.east.e6 ? bracket.east.e5 : bracket.east.e6);
 
   // Update Finals
@@ -120,10 +131,10 @@ function submitPrediction() {
     if (data.error) {
       alert(data.error);
     } else {
-      document.getElementById('summary').innerText = `Summary: ${JSON.stringify(picks, null, 2)}`;
-      alert('Prediction submitted successfully!');
-    }
-  })
+        document.getElementById('summary').innerText = `Summary: ${JSON.stringify(picks, null, 2)}`;
+        alert('Prediction submitted successfully!');
+      }
+    })
   .catch(error => {
     console.error('Error:', error);
     alert('An error occurred while submitting your prediction.');
