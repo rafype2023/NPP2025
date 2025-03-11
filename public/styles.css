@@ -1,0 +1,12 @@
+body {
+  background: url('https://example.com/nba-background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  font-family: Arial, sans-serif;
+  color: #fff;
+}
+.bracket { padding: 20px; }
+.play-in, .rounds, .finals { margin: 20px 0; }
+.matchup { margin: 10px 0; }
+select, input { padding: 5px; margin: 5px; }
+button { padding: 10px 20px; background: #ffd700; border: none; cursor: pointer; }
+#summary { margin-top: 20px; background: rgba(0,0,0,0.7); padding: 10px; }
