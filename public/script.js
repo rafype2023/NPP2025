@@ -11,19 +11,23 @@ function updateBracket() {
   const east7 = document.getElementById('east7').value;
   const east8 = document.getElementById('east8').value;
 
-  // Validate unique selections
+  // Validate unique selections within each conference
   if ((west7 && west8 && west7 === west8) || (east7 && east8 && east7 === east8)) {
-    alert('7th and 8th positions must be different teams!');
+    alert('7th and 8th positions must be different teams in each conference!');
+    document.getElementById('west7').value = '';
+    document.getElementById('west8').value = '';
+    document.getElementById('east7').value = '';
+    document.getElementById('east8').value = '';
     return;
   }
 
-  // Assign Play-In teams to bracket
+  // Assign Play-In teams to bracket opponents
   document.getElementById('w1opp').textContent = west8 || '';
   document.getElementById('w2opp').textContent = west7 || '';
   document.getElementById('e1opp').textContent = east8 || '';
   document.getElementById('e2opp').textContent = east7 || '';
 
-  // Update bracket object
+  // Update bracket with initial seeded teams
   bracket.west.w1 = 'Lakers';
   bracket.west.w2 = 'Rockets';
   bracket.west.w3 = 'Nuggets';
@@ -32,14 +36,9 @@ function updateBracket() {
   bracket.east.e2 = 'Pacers';
   bracket.east.e3 = 'Celtics';
   bracket.east.e4 = 'Raptors';
-  bracket.west.w5 = document.getElementById('w5').value || '';
-  bracket.west.w6 = document.getElementById('w6').value || '';
-  bracket.west.w7 = document.getElementById('w7').value || '';
-  bracket.east.e5 = document.getElementById('e5').value || '';
-  bracket.east.e6 = document.getElementById('e6').value || '';
-  bracket.east.e7 = document.getElementById('e7').value || '';
 
-  // Update subsequent rounds (simplified)
+  // Update subsequent rounds based on selections
+  // First round opponents are set by Play-In
   bracket.west.w5 = document.getElementById('w5').value || (bracket.west.w1 > document.getElementById('w1opp').textContent ? bracket.west.w1 : document.getElementById('w1opp').textContent);
   bracket.west.w6 = document.getElementById('w6').value || (bracket.west.w2 > document.getElementById('w2opp').textContent ? bracket.west.w2 : document.getElementById('w2opp').textContent);
   bracket.west.w7 = document.getElementById('w7').value || (bracket.west.w5 > bracket.west.w6 ? bracket.west.w5 : bracket.west.w6);
@@ -49,7 +48,19 @@ function updateBracket() {
 
   // Update Finals
   bracket.finals = document.getElementById('w7').value && document.getElementById('e7').value ? (bracket.west.w7 > bracket.east.e7 ? bracket.west.w7 : bracket.east.e7) : '';
-  document.getElementById('champion').innerHTML = `<option>${bracket.finals}</option>`;
+  document.getElementById('champion').innerHTML = `<option value="${bracket.finals}">${bracket.finals}</option><option value="">Select</option>`;
+
+  // Reset subsequent rounds if earlier picks change
+  if (document.getElementById('west7').value || document.getElementById('west8').value || document.getElementById('east7').value || document.getElementById('east8').value) {
+    document.getElementById('w5').value = '';
+    document.getElementById('w6').value = '';
+    document.getElementById('w7').value = '';
+    document.getElementById('e5').value = '';
+    document.getElementById('e6').value = '';
+    document.getElementById('e7').value = '';
+    document.getElementById('champion').value = '';
+  }
+
   console.log('Bracket updated:', bracket);
 }
 
@@ -76,8 +87,8 @@ function submitPrediction() {
     champion: document.getElementById('champion').value,
     mvp: document.getElementById('mvp').value,
     lastGameScore: [
-      Number(document.getElementById('score1').value),
-      Number(document.getElementById('score2').value)
+      Number(document.getElementById('score1').value) || 0,
+      Number(document.getElementById('score2').value) || 0
     ],
     paymentMethod: document.getElementById('paymentMethod').value,
     name: document.getElementById('name').value,
@@ -86,7 +97,7 @@ function submitPrediction() {
   };
 
   // Validation
-  if (picks.bracketPicks.includes('') || picks.seriesLengths.includes(NaN) || !picks.champion || !picks.mvp || picks.lastGameScore.includes(NaN) || !picks.paymentMethod) {
+  if (picks.bracketPicks.some(pick => pick === '') || picks.seriesLengths.some(length => isNaN(length)) || !picks.champion || !picks.mvp || picks.lastGameScore.some(score => isNaN(score)) || !picks.paymentMethod) {
     alert('Please complete all selections');
     return;
   }
@@ -106,15 +117,23 @@ function submitPrediction() {
   })
   .then(response => response.json())
   .then(data => {
-    if (data.error) alert(data.error);
-    else {
-      document.getElementById('summary').innerText = `Summary: ${JSON.stringify(picks)}`;
+    if (data.error) {
+      alert(data.error);
+    } else {
+      document.getElementById('summary').innerText = `Summary: ${JSON.stringify(picks, null, 2)}`;
+      alert('Prediction submitted successfully!');
     }
   })
-  .catch(error => console.error('Error:', error));
+  .catch(error => {
+    console.error('Error:', error);
+    alert('An error occurred while submitting your prediction.');
+  });
 }
 
 // Add event listeners for dropdown changes to update bracket
 document.querySelectorAll('select[id^="west"], select[id^="east"], select[id^="w"], select[id^="e"]').forEach(el => {
   el.addEventListener('change', updateBracket);
 });
+
+// Initial call to set up the bracket
+updateBracket();
