@@ -1,16 +1,182 @@
 body {
   background: url('https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1') no-repeat center center fixed;
   background-size: cover;
-  font-family: Arial, sans-serif;
+  font-family: 'Arial', sans-serif;
   color: #fff;
   margin: 0;
   padding: 20px;
+  box-sizing: border-box;
 }
-.bracket { max-width: 1200px; margin: 0 auto; }
-.play-in, .rounds, .finals { margin: 20px 0; background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 5px; }
-.conference { display: inline-block; vertical-align: top; width: 45%; margin-right: 5%; }
-.matchup { margin: 10px 0; }
-.semifinal { margin-left: 20px; } /* Indent semifinals */
-select, input { padding: 5px; margin: 5px; background: #fff; color: #000; }
-button { padding: 10px 20px; background: #ffd700; border: none; cursor: pointer; }
-#summary { margin-top: 20px; background: rgba(0, 0, 0, 0.9); padding: 10px; }
+
+.bracket {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+h3 {
+  font-size: 1.5em;
+  margin: 10px 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.play-in, .rounds, .finals {
+  margin: 20px 0;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.play-in {
+  border: 2px solid #ffd700;
+}
+
+.conference {
+  display: inline-block;
+  vertical-align: top;
+  width: 48%;
+  margin: 1%;
+  position: relative;
+}
+
+.conference h3 {
+  position: absolute;
+  top: -30px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+}
+
+/* Add section labels */
+.conference .first-round {
+  color: #ff6347; /* Tomato color for First Round */
+  font-size: 1.2em;
+  margin-bottom: 10px;
+}
+
+.conference .semifinals {
+  color: #ff4500; /* OrangeRed for Semifinals */
+  font-size: 1.2em;
+  margin: 20px 0 10px;
+}
+
+.conference .conference-final {
+  color: #ff8c00; /* DarkOrange for Conference Finals */
+  font-size: 1.2em;
+  margin: 20px 0 10px;
+}
+
+.matchup {
+  margin: 15px 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.matchup::after {
+  content: '';
+  position: absolute;
+  width: 100px;
+  height: 2px;
+  background: #fff;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+}
+
+.matchup:last-child::after {
+  display: none;
+}
+
+/* Styling for matchup components */
+.matchup span {
+  margin: 0 10px;
+  font-size: 1em;
+  min-width: 150px;
+  text-align: left;
+  color: #ffd700;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.matchup select {
+  padding: 8px;
+  margin: 0 5px;
+  background: #fff;
+  color: #000;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer; /* Ensure cursor indicates interactivity */
+  pointer-events: auto; /* Explicitly enable pointer events */
+  z-index: 10; /* Ensure select is above other elements */
+}
+
+.indented {
+  margin-left: 50px;
+}
+
+select, input {
+  padding: 8px;
+  margin: 5px;
+  background: #fff;
+  color: #000;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+button {
+  padding: 12px 25px;
+  background: #ffd700;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #000;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #e6c200;
+}
+
+#summary {
+  margin-top: 20px;
+  background: rgba(0, 0, 0, 0.9);
+  padding: 15px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+.finals {
+  text-align: left;
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+.finals select, .finals input {
+  width: 200px;
+  margin: 10px 5px;
+}
+
+.play-in::before, .rounds::before, .finals::before {
+  content: '';
+  display: block;
+  width: 50%;
+  height: 2px;
+  background: #ffd700;
+  margin: 0 auto 20px;
+}

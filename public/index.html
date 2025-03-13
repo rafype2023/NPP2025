@@ -8,53 +8,216 @@
 <body>
   <div class="bracket">
     <h1>NPP2025 - NBA Playoffs Predictor</h1>
+
+    <!-- Play-In Section -->
     <div class="play-in">
       <h3>Western Conference Play-In</h3>
-      <label>7th Position: <select id="west7"><option value="">Select</option><option>New Orleans</option><option>Utah</option><option>San Antonio</option><option>Dallas</option></select></label>
-      <label>8th Position: <select id="west8"><option value="">Select</option><option>New Orleans</option><option>Utah</option><option>San Antonio</option><option>Dallas</option></select></label>
+      <label>7th Position: 
+        <select id="west7">
+          <option value="">Select</option>
+          <option value="New Orleans">New Orleans</option>
+          <option value="Utah">Utah</option>
+          <option value="San Antonio">San Antonio</option>
+          <option value="Dallas">Dallas</option>
+        </select>
+      </label>
+      <label>8th Position: 
+        <select id="west8">
+          <option value="">Select</option>
+          <option value="New Orleans">New Orleans</option>
+          <option value="Utah">Utah</option>
+          <option value="San Antonio">San Antonio</option>
+          <option value="Dallas">Dallas</option>
+        </select>
+      </label>
+
       <h3>Eastern Conference Play-In</h3>
-      <label>7th Position: <select id="east7"><option value="">Select</option><option>Atlanta</option><option>Indiana</option><option>Charlotte</option><option>Miami</option></select></label>
-      <label>8th Position: <select id="east8"><option value="">Select</option><option>Atlanta</option><option>Indiana</option><option>Charlotte</option><option>Miami</option></select></label>
+      <label>7th Position: 
+        <select id="east7">
+          <option value="">Select</option>
+          <option value="Atlanta">Atlanta</option>
+          <option value="Indiana">Indiana</option>
+          <option value="Charlotte">Charlotte</option>
+          <option value="Miami">Miami</option>
+        </select>
+      </label>
+      <label>8th Position: 
+        <select id="east8">
+          <option value="">Select</option>
+          <option value="Atlanta">Atlanta</option>
+          <option value="Indiana">Indiana</option>
+          <option value="Charlotte">Charlotte</option>
+          <option value="Miami">Miami</option>
+        </select>
+      </label>
     </div>
+
+    <!-- Rounds Section -->
     <div class="rounds">
+      <!-- Western Conference -->
       <div class="conference west">
         <h3>Western Conference</h3>
-        <div class="matchup"><select id="w1"><option>Lakers</option><option id="w1opp"></option></select> (Series: <select id="w1len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="w2"><option>Rockets</option><option id="w2opp"></option></select> (Series: <select id="w2len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="w3"><option>Nuggets</option><option id="w3opp"></option></select> (Series: <select id="w3len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="w4"><option>Clippers</option><option id="w4opp"></option></select> (Series: <select id="w4len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup semifinal"><select id="w5"></select> (Series: <select id="w5len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup semifinal"><select id="w6"></select> (Series: <select id="w6len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="w7"></select> (Series: <select id="w7len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
+        <div class="first-round">First Round</div>
+        <div class="matchup">
+          <span id="w1Matchup">1. Thunder vs Select 8th</span>
+          <select id="w1"></select> (Series: 
+          <select id="w1len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="w1Selection">1 vs 8</span>
+        </div>
+        <div class="matchup">
+          <span id="w2Matchup">2. Grizzlies vs Select 7th</span>
+          <select id="w2"></select> (Series: 
+          <select id="w2len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="w2Selection">2 vs 7</span>
+        </div>
+        <div class="matchup">
+          <span id="w3Matchup">3. Nuggets vs 6. Warriors</span>
+          <select id="w3"></select> (Series: 
+          <select id="w3len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="w3Selection">3 vs 6</span>
+        </div>
+        <div class="matchup">
+          <span id="w4Matchup">4. Lakers vs 5. Rockets</span>
+          <select id="w4"></select> (Series: 
+          <select id="w4len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="w4Selection">4 vs 5</span>
+        </div>
+        <div class="semifinals">Semifinals</div>
+        <div class="matchup indented">
+          <span id="w5Matchup"></span>
+          <select id="w5"></select> (Series: 
+          <select id="w5len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="w5Selection">Winner</span>
+        </div>
+        <div class="matchup indented">
+          <span id="w6Matchup"></span>
+          <select id="w6"></select> (Series: 
+          <select id="w6len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="w6Selection">Winner</span>
+        </div>
+        <div class="conference-final">Conference Finals</div>
+        <div class="matchup indented conference-final">
+          <span id="w7Matchup"></span>
+          <select id="w7"></select> (Series: 
+          <select id="w7len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="w7Selection">Winner</span>
+        </div>
       </div>
+
+      <!-- Eastern Conference -->
       <div class="conference east">
         <h3>Eastern Conference</h3>
-        <div class="matchup"><select id="e1"><option>Bucks</option><option id="e1opp"></option></select> (Series: <select id="e1len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="e2"><option>Pacers</option><option id="e2opp"></option></select> (Series: <select id="e2len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="e3"><option>Celtics</option><option id="e3opp"></option></select> (Series: <select id="e3len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="e4"><option>Raptors</option><option id="e4opp"></option></select> (Series: <select id="e4len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup semifinal"><select id="e5"></select> (Series: <select id="e5len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup semifinal"><select id="e6"></select> (Series: <select id="e6len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
-        <div class="matchup"><select id="e7"></select> (Series: <select id="e7len"><option>4</option><option>5</option><option>6</option><option>7</option></select>)</div>
+        <div class="first-round">First Round</div>
+        <div class="matchup">
+          <span id="e1Matchup">1. Cavaliers vs Select 8th</span>
+          <select id="e1"></select> (Series: 
+          <select id="e1len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="e1Selection">1 vs 8</span>
+        </div>
+        <div class="matchup">
+          <span id="e2Matchup">2. Celtics vs Select 7th</span>
+          <select id="e2"></select> (Series: 
+          <select id="e2len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="e2Selection">2 vs 7</span>
+        </div>
+        <div class="matchup">
+          <span id="e3Matchup">3. Knicks vs 6. Pistons</span>
+          <select id="e3"></select> (Series: 
+          <select id="e3len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="e3Selection">3 vs 6</span>
+        </div>
+        <div class="matchup">
+          <span id="e4Matchup">4. Bucks vs 5. Pacers</span>
+          <select id="e4"></select> (Series: 
+          <select id="e4len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="e4Selection">4 vs 5</span>
+        </div>
+        <div class="semifinals">Semifinals</div>
+        <div class="matchup indented">
+          <span id="e5Matchup"></span>
+          <select id="e5"></select> (Series: 
+          <select id="e5len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="e5Selection">Winner</span>
+        </div>
+        <div class="matchup indented">
+          <span id="e6Matchup"></span>
+          <select id="e6"></select> (Series: 
+          <select id="e6len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="e6Selection">Winner</span>
+        </div>
+        <div class="conference-final">Conference Finals</div>
+        <div class="matchup indented conference-final">
+          <span id="e7Matchup"></span>
+          <select id="e7"></select> (Series: 
+          <select id="e7len">
+            <option>4</option><option>5</option><option>6</option><option>7</option>
+          </select>)
+          <span id="e7Selection">Winner</span>
+        </div>
       </div>
     </div>
+
+    <!-- Finals Section -->
     <div class="finals">
       <h3>Finals</h3>
-      <select id="champion"></select> (Series: <select id="finalLen"><option>4</option><option>5</option><option>6</option><option>7</option></select>)
-      <br>MVP: <select id="mvp">
-        <option>LeBron James</option><option>Giannis Antetokounmpo</option><option>Stephen Curry</option>
+      <span id="championMatchup"></span>
+      <select id="champion"></select> (Series: 
+      <select id="finalLen">
+        <option>4</option><option>5</option><option>6</option><option>7</option>
+      </select>)
+      <span id="championSelection">Winner</span>
+      <br>MVP: 
+      <select id="mvp">
+        <option>LeBron James</option>
+        <option>Giannis Antetokounmpo</option>
+        <option>Stephen Curry</option>
       </select>
-      <br>Last Game Score: <input type="number" id="score1" min="50" max="200"> - <input type="number" id="score2" min="50" max="200">
-      <br>Payment Method: <select id="paymentMethod">
-        <option>ATH-Movil</option><option>PayPal</option><option>Credit Cards</option>
+      <br>Last Game Score: 
+      <input type="number" id="score1" min="50" max="200"> - 
+      <input type="number" id="score2" min="50" max="200">
+      <br>Payment Method: 
+      <select id="paymentMethod">
+        <option>ATH-Movil</option>
+        <option>PayPal</option>
+        <option>Credit Cards</option>
       </select>
+      <br>Email: <input type="email" id="email" required>
       <br>Name: <input type="text" id="name">
       <br>Phone: <input type="text" id="phone">
       <br>Comments: <input type="text" id="comments">
     </div>
+
     <button onclick="submitPrediction()">Submit</button>
     <div id="summary"></div>
+    <button id="startOver" onclick="startOver()" style="display: none;">Start Over</button>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
