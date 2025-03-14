@@ -500,13 +500,13 @@ function submitPrediction() {
   const eastPlayIn7 = document.getElementById('east7').value;
   const eastPlayIn8 = document.getElementById('east8').value;
 
-  // Capture winners and series lengths for each round
-  const winners = [
+  // Capture winners and series lengths for each round, including Finals
+  const winnersList = [
     document.getElementById('w1').value, document.getElementById('w2').value, document.getElementById('w3').value,
     document.getElementById('w4').value, document.getElementById('w5').value, document.getElementById('w6').value,
     document.getElementById('w7').value, document.getElementById('e1').value, document.getElementById('e2').value,
     document.getElementById('e3').value, document.getElementById('e4').value, document.getElementById('e5').value,
-    document.getElementById('e6').value, document.getElementById('e7').value
+    document.getElementById('e6').value, document.getElementById('e7').value, document.getElementById('champion').value
   ];
 
   const seriesLengths = [
@@ -518,7 +518,7 @@ function submitPrediction() {
   ].map(Number);
 
   // Combine winners and series lengths into a single array
-  const seriesResults = winners.map((winner, index) => {
+  const seriesResults = winnersList.map((winner, index) => {
     return `${winner} -${seriesLengths[index]}`;
   });
 
@@ -527,7 +527,7 @@ function submitPrediction() {
     westPlayIn8,
     eastPlayIn7,
     eastPlayIn8,
-    seriesResults,
+    seriesResults, // Combined winner and series length (now includes Finals at index 14)
     champion: document.getElementById('champion').value,
     mvp: document.getElementById('mvp').value,
     lastGameScore: [
