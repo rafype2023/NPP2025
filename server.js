@@ -283,6 +283,10 @@ app.get('/results', async (req, res) => {
       const claveGames = parseInt(claveResult.split(' -')[1]) || 0;
       const predMVP = prediction.mvp || '';
       const claveMVP = claveRecord.mvp || '';
+      const predScore = prediction.lastGameScore || [0, 0];
+      const claveScore = claveRecord.lastGameScore || [0, 0];
+      const scoreDiff1 = Math.abs(predScore[0] - claveScore[0]); // Difference in winning score
+      const scoreDiff2 = Math.abs(predScore[1] - claveScore[1]); // Difference in losing score
 
       const winnerMatch = predWinner === claveWinner;
       const gamesMatch = predGames === claveGames;
@@ -291,11 +295,13 @@ app.get('/results', async (req, res) => {
 
       scores.finals.push({
         key: finalsKey.key,
-        prediction: `${predWinner} ${predResult.split(' -')[1] || ''}, ${predMVP}`,
-        result: `${claveWinner} ${claveResult.split(' -')[1] || ''}, ${claveMVP}`,
+        prediction: `${predWinner} ${predResult.split(' -')[1] || ''}, ${predMVP}, ${predScore.join(' - ')}`,
+        result: `${claveWinner} ${claveResult.split(' -')[1] || ''}, ${claveMVP}, ${claveScore.join(' - ')}`,
         winnerMatch: winnerMatch ? 'Yes' : 'No',
         gamesMatch: gamesMatch ? 'Yes' : 'No',
         mvpMatch: mvpMatch ? 'Yes' : 'No',
+        scoreDiff1: scoreDiff1, // Tiebreaker: difference in winning score
+        scoreDiff2: scoreDiff2, // Tiebreaker: difference in losing score
         points
       });
 
@@ -449,6 +455,8 @@ app.get('/results', async (req, res) => {
               <th>Winner Match</th>
               <th>Games Match</th>
               <th>MVP Match</th>
+              <th>Score Diff (Win)</th>
+              <th>Score Diff (Loss)</th>
               <th>Points</th>
             </tr>
       `;
@@ -461,6 +469,8 @@ app.get('/results', async (req, res) => {
               <td>${match.winnerMatch}</td>
               <td>${match.gamesMatch}</td>
               <td>${match.mvpMatch}</td>
+              <td>${match.scoreDiff1}</td>
+              <td>${match.scoreDiff2}</td>
               <td>${match.points}</td>
             </tr>
         `;
@@ -471,10 +481,11 @@ app.get('/results', async (req, res) => {
       const finalsPoints = scores.finals.reduce((sum, match) => sum + match.points, 0);
       reportContent += `
             <tr>
-              <td colspan="4"><strong>Total</strong></td>
+              <td colspan="5"><strong>Total</strong></td>
               <td>${finalsWinners}</td>
               <td>${finalsGames}</td>
               <td>${finalsMVPs}</td>
+              <td></td>
               <td>${finalsPoints}</td>
             </tr>
           </table>
@@ -525,7 +536,7 @@ app.get('/results', async (req, res) => {
   }
 });
 
-// Redirect root to results page
+// Redirect root to results page (optional, can be removed if not needed)
 app.get('/', (req, res) => {
   res.redirect('/results');
 });
