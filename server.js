@@ -1,548 +1,617 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
+let bracket = {
+  west: { playIn7: '', playIn8: '', w1: '', w2: '', w3: '', w4: '', w5: '', w6: '', w7: '' },
+  east: { playIn7: '', playIn8: '', e1: '', e2: '', e3: '', e4: '', e5: '', e6: '', e7: '' },
+  finals: ''
+};
 
-const app = express();
-app.use(express.json());
-app.use(express.static('public'));
+// Object to store user selections, including finals
+let winners = {
+  west: { winnerW1: '', winnerW2: '', winnerW3: '', winnerW4: '', winnerW5: '', winnerW6: '', winnerW7: '' },
+  east: { winnerE1: '', winnerE2: '', winnerE3: '', winnerE4: '', winnerE5: '', winnerE6: '', winnerE7: '' },
+  finals: ''
+};
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Track previous selections to avoid unnecessary updates
+let previousPlayInSelections = {
+  west7: '',
+  west8: '',
+  east7: '',
+  east8: ''
+};
 
-// Prediction Schema
-const predictionSchema = new mongoose.Schema({
-  westPlayIn7: String,
-  westPlayIn8: String,
-  eastPlayIn7: String,
-  eastPlayIn8: String,
-  seriesResults: [String],
-  champion: String,
-  mvp: String,
-  lastGameScore: [Number],
-  paymentMethod: String,
-  name: String,
-  phone: String,
-  comments: String,
-  email: String,
-  timestamp: { type: Date, default: Date.now },
-  formattedSummary: String
-});
-const Prediction = mongoose.model('Prediction', predictionSchema);
+let previousFirstRoundWinners = {
+  w1: '',
+  w2: '',
+  w3: '',
+  w4: '',
+  e1: '',
+  e2: '',
+  e3: '',
+  e4: ''
+};
 
-// Nodemailer Setup
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+let previousSemifinalsWinners = {
+  w5: '',
+  w6: '',
+  e5: '',
+  e6: ''
+};
 
-// API to Save Prediction
-app.post('/api/submit', async (req, res) => {
-  try {
-    const { westPlayIn7, westPlayIn8, eastPlayIn7, eastPlayIn8, seriesResults, champion, mvp, lastGameScore, paymentMethod, name, phone, comments, email } = req.body;
+let previousConferenceFinalsWinners = {
+  w7: '',
+  e7: ''
+};
 
-    if (!seriesResults || seriesResults.some(result => !result || result.includes(' -undefined')) || !champion || !mvp || !lastGameScore || !paymentMethod || !name || !phone || !email) {
-      return res.status(400).json({ error: 'All required fields are required' });
-    }
-    if (lastGameScore[0] <= lastGameScore[1]) {
-      return res.status(400).json({ error: 'Winning score must be higher than losing score' });
-    }
-    const seriesLengths = seriesResults.map(result => {
-      const match = result.match(/-(\d+)$/);
-      return match ? parseInt(match[1]) : NaN;
+// Ensure DOM is fully loaded before attaching event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Initial call to populate the bracket
+  updateBracket();
+
+  // Event listeners for real-time updates with debugging
+  document.querySelectorAll('select[id^="west"], select[id^="east"], select[id^="w"], select[id^="e"], #champion').forEach(el => {
+    el.addEventListener('click', function() {
+      console.log('Click event triggered for:', this.id);
     });
-    if (!seriesLengths.every(length => [4, 5, 6, 7].includes(length))) {
-      return res.status(400).json({ error: 'Series length must be between 4 and 7 games' });
+    el.addEventListener('change', function() {
+      console.log('Change event triggered for:', this.id, 'Value:', this.value);
+      updateBracket();
+    });
+  });
+});
+
+function updateBracket() {
+  try {
+    // Get Play-In selections
+    const west7 = document.getElementById('west7').value;
+    const west8 = document.getElementById('west8').value;
+    const east7 = document.getElementById('east7').value;
+    const east8 = document.getElementById('east8').value;
+
+    // Validate unique selections within each conference
+    if ((west7 && west8 && west7 === west8) || (east7 && east8 && east7 === east8)) {
+      alert('7th and 8th positions must be different teams in each conference!');
+      document.getElementById('west7').value = '';
+      document.getElementById('west8').value = '';
+      document.getElementById('east7').value = '';
+      document.getElementById('east8').value = '';
+      return;
     }
 
-    const formattedSummary = `
-Email: ${email}
-Phone: ${phone || 'N/A'}
-Comments: ${comments || 'N/A'}
-Payment Method: ${paymentMethod} - Envie Pago al ${phone}
+    // Update bracket state with Play-In selections
+    bracket.west.playIn7 = west7;
+    bracket.west.playIn8 = west8;
+    bracket.east.playIn7 = east7;
+    bracket.east.playIn8 = east8;
+
+    // Check if Play-In selections have changed
+    const playInChanged =
+      west7 !== previousPlayInSelections.west7 ||
+      west8 !== previousPlayInSelections.west8 ||
+      east7 !== previousPlayInSelections.east7 ||
+      east8 !== previousPlayInSelections.east8;
+
+    // Store current Play-In selections for the next update
+    previousPlayInSelections.west7 = west7;
+    previousPlayInSelections.west8 = west8;
+    previousPlayInSelections.east7 = east7;
+    previousPlayInSelections.east8 = east8;
+
+    // Populate First Round matchups and winner dropdowns only if Play-In selections changed
+    if (playInChanged) {
+      // Western Conference First Round
+      const w1Matchup = document.getElementById('w1Matchup');
+      w1Matchup.textContent = west8 ? `1. Thunder vs ${west8}` : '1. Thunder vs Select 8th';
+      const w1Select = document.getElementById('w1');
+      w1Select.innerHTML = '';
+      const w1Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('1. Thunder', '1. Thunder'),
+        ...(west8 ? [new Option(west8, west8)] : [])
+      ];
+      w1Options.forEach(option => w1Select.add(option));
+
+      const w2Matchup = document.getElementById('w2Matchup');
+      w2Matchup.textContent = west7 ? `2. Grizzlies vs ${west7}` : '2. Grizzlies vs Select 7th';
+      const w2Select = document.getElementById('w2');
+      w2Select.innerHTML = '';
+      const w2Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('2. Grizzlies', '2. Grizzlies'),
+        ...(west7 ? [new Option(west7, west7)] : [])
+      ];
+      w2Options.forEach(option => w2Select.add(option));
+
+      const w3Matchup = document.getElementById('w3Matchup');
+      w3Matchup.textContent = '3. Nuggets vs 6. Warriors';
+      const w3Select = document.getElementById('w3');
+      w3Select.innerHTML = '';
+      const w3Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('3. Nuggets', '3. Nuggets'),
+        new Option('6. Warriors', '6. Warriors')
+      ];
+      w3Options.forEach(option => w3Select.add(option));
+
+      const w4Matchup = document.getElementById('w4Matchup');
+      w4Matchup.textContent = '4. Lakers vs 5. Rockets';
+      const w4Select = document.getElementById('w4');
+      w4Select.innerHTML = '';
+      const w4Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('4. Lakers', '4. Lakers'),
+        new Option('5. Rockets', '5. Rockets')
+      ];
+      w4Options.forEach(option => w4Select.add(option));
+
+      // Eastern Conference First Round
+      const e1Matchup = document.getElementById('e1Matchup');
+      e1Matchup.textContent = east8 ? `1. Cavaliers vs ${east8}` : '1. Cavaliers vs Select 8th';
+      const e1Select = document.getElementById('e1');
+      e1Select.innerHTML = '';
+      const e1Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('1. Cavaliers', '1. Cavaliers'),
+        ...(east8 ? [new Option(east8, east8)] : [])
+      ];
+      e1Options.forEach(option => e1Select.add(option));
+
+      const e2Matchup = document.getElementById('e2Matchup');
+      e2Matchup.textContent = east7 ? `2. Celtics vs ${east7}` : '2. Celtics vs Select 7th';
+      const e2Select = document.getElementById('e2');
+      e2Select.innerHTML = '';
+      const e2Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('2. Celtics', '2. Celtics'),
+        ...(east7 ? [new Option(east7, east7)] : [])
+      ];
+      e2Options.forEach(option => e2Select.add(option));
+
+      const e3Matchup = document.getElementById('e3Matchup');
+      e3Matchup.textContent = '3. Knicks vs 6. Pistons';
+      const e3Select = document.getElementById('e3');
+      e3Select.innerHTML = '';
+      const e3Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('3. Knicks', '3. Knicks'),
+        new Option('6. Pistons', '6. Pistons')
+      ];
+      e3Options.forEach(option => e3Select.add(option));
+
+      const e4Matchup = document.getElementById('e4Matchup');
+      e4Matchup.textContent = '4. Bucks vs 5. Pacers';
+      const e4Select = document.getElementById('e4');
+      e4Select.innerHTML = '';
+      const e4Options = [
+        new Option('Select Winner', '', true, true),
+        new Option('4. Bucks', '4. Bucks'),
+        new Option('5. Pacers', '5. Pacers')
+      ];
+      e4Options.forEach(option => e4Select.add(option));
+    }
+
+    // Update winners object with current First Round selections
+    winners.west.winnerW1 = document.getElementById('w1').value;
+    winners.west.winnerW2 = document.getElementById('w2').value;
+    winners.west.winnerW3 = document.getElementById('w3').value;
+    winners.west.winnerW4 = document.getElementById('w4').value;
+    winners.east.winnerE1 = document.getElementById('e1').value;
+    winners.east.winnerE2 = document.getElementById('e2').value;
+    winners.east.winnerE3 = document.getElementById('e3').value;
+    winners.east.winnerE4 = document.getElementById('e4').value;
+
+    // Update First Round selection displays
+    const w1Selection = document.getElementById('w1Selection');
+    w1Selection.textContent = `1 vs 8: ${winners.west.winnerW1 || ''}`;
+    const w2Selection = document.getElementById('w2Selection');
+    w2Selection.textContent = `2 vs 7: ${winners.west.winnerW2 || ''}`;
+    const w3Selection = document.getElementById('w3Selection');
+    w3Selection.textContent = `3 vs 6: ${winners.west.winnerW3 || ''}`;
+    const w4Selection = document.getElementById('w4Selection');
+    w4Selection.textContent = `4 vs 5: ${winners.west.winnerW4 || ''}`;
+    const e1Selection = document.getElementById('e1Selection');
+    e1Selection.textContent = `1 vs 8: ${winners.east.winnerE1 || ''}`;
+    const e2Selection = document.getElementById('e2Selection');
+    e2Selection.textContent = `2 vs 7: ${winners.east.winnerE2 || ''}`;
+    const e3Selection = document.getElementById('e3Selection');
+    e3Selection.textContent = `3 vs 6: ${winners.east.winnerE3 || ''}`;
+    const e4Selection = document.getElementById('e4Selection');
+    e4Selection.textContent = `4 vs 5: ${winners.east.winnerE4 || ''}`;
+
+    // Check if First Round winners have changed
+    const firstRoundChanged =
+      winners.west.winnerW1 !== previousFirstRoundWinners.w1 ||
+      winners.west.winnerW2 !== previousFirstRoundWinners.w2 ||
+      winners.west.winnerW3 !== previousFirstRoundWinners.w3 ||
+      winners.west.winnerW4 !== previousFirstRoundWinners.w4 ||
+      winners.east.winnerE1 !== previousFirstRoundWinners.e1 ||
+      winners.east.winnerE2 !== previousFirstRoundWinners.e2 ||
+      winners.east.winnerE3 !== previousFirstRoundWinners.e3 ||
+      winners.east.winnerE4 !== previousFirstRoundWinners.e4;
+
+    // Store current First Round winners for the next update
+    previousFirstRoundWinners.w1 = winners.west.winnerW1;
+    previousFirstRoundWinners.w2 = winners.west.winnerW2;
+    previousFirstRoundWinners.w3 = winners.west.winnerW3;
+    previousFirstRoundWinners.w4 = winners.west.winnerW4;
+    previousFirstRoundWinners.e1 = winners.east.winnerE1;
+    previousFirstRoundWinners.e2 = winners.east.winnerE2;
+    previousFirstRoundWinners.e3 = winners.east.winnerE3;
+    previousFirstRoundWinners.e4 = winners.east.winnerE4;
+
+    // Populate Semifinals matchups and winner dropdowns only if First Round winners changed
+    if (firstRoundChanged) {
+      const w5Matchup = document.getElementById('w5Matchup');
+      w5Matchup.textContent = (winners.west.winnerW1 && winners.west.winnerW4 && winners.west.winnerW1 !== '' && winners.west.winnerW4 !== '') ? 
+        `${winners.west.winnerW1} vs ${winners.west.winnerW4}` : '';
+      const w5Select = document.getElementById('w5');
+      w5Select.innerHTML = '';
+      const w5Options = (winners.west.winnerW1 && winners.west.winnerW4 && winners.west.winnerW1 !== '' && winners.west.winnerW4 !== '') ? [
+        new Option('Select Winner', '', true, true),
+        new Option(winners.west.winnerW1, winners.west.winnerW1),
+        new Option(winners.west.winnerW4, winners.west.winnerW4)
+      ] : [new Option('Select First Round Winners', '', true, true)];
+      w5Options.forEach(option => w5Select.add(option));
+
+      const w6Matchup = document.getElementById('w6Matchup');
+      w6Matchup.textContent = (winners.west.winnerW2 && winners.west.winnerW3 && winners.west.winnerW2 !== '' && winners.west.winnerW3 !== '') ? 
+        `${winners.west.winnerW2} vs ${winners.west.winnerW3}` : '';
+      const w6Select = document.getElementById('w6');
+      w6Select.innerHTML = '';
+      const w6Options = (winners.west.winnerW2 && winners.west.winnerW3 && winners.west.winnerW2 !== '' && winners.west.winnerW3 !== '') ? [
+        new Option('Select Winner', '', true, true),
+        new Option(winners.west.winnerW2, winners.west.winnerW2),
+        new Option(winners.west.winnerW3, winners.west.winnerW3)
+      ] : [new Option('Select First Round Winners', '', true, true)];
+      w6Options.forEach(option => w6Select.add(option));
+
+      const e5Matchup = document.getElementById('e5Matchup');
+      e5Matchup.textContent = (winners.east.winnerE1 && winners.east.winnerE4 && winners.east.winnerE1 !== '' && winners.east.winnerE4 !== '') ? 
+        `${winners.east.winnerE1} vs ${winners.east.winnerE4}` : '';
+      const e5Select = document.getElementById('e5');
+      e5Select.innerHTML = '';
+      const e5Options = (winners.east.winnerE1 && winners.east.winnerE4 && winners.east.winnerE1 !== '' && winners.east.winnerE4 !== '') ? [
+        new Option('Select Winner', '', true, true),
+        new Option(winners.east.winnerE1, winners.east.winnerE1),
+        new Option(winners.east.winnerE4, winners.east.winnerE4)
+      ] : [new Option('Select First Round Winners', '', true, true)];
+      e5Options.forEach(option => e5Select.add(option));
+
+      const e6Matchup = document.getElementById('e6Matchup');
+      e6Matchup.textContent = (winners.east.winnerE2 && winners.east.winnerE3 && winners.east.winnerE2 !== '' && winners.east.winnerE3 !== '') ? 
+        `${winners.east.winnerE2} vs ${winners.east.winnerE3}` : '';
+      const e6Select = document.getElementById('e6');
+      e6Select.innerHTML = '';
+      const e6Options = (winners.east.winnerE2 && winners.east.winnerE3 && winners.east.winnerE2 !== '' && winners.east.winnerE3 !== '') ? [
+        new Option('Select Winner', '', true, true),
+        new Option(winners.east.winnerE2, winners.east.winnerE2),
+        new Option(winners.east.winnerE3, winners.east.winnerE3)
+      ] : [new Option('Select First Round Winners', '', true, true)];
+      e6Options.forEach(option => e6Select.add(option));
+    }
+
+    // Update Semifinals winners and selections
+    winners.west.winnerW5 = document.getElementById('w5').value;
+    winners.west.winnerW6 = document.getElementById('w6').value;
+    winners.east.winnerE5 = document.getElementById('e5').value;
+    winners.east.winnerE6 = document.getElementById('e6').value;
+
+    const w5Selection = document.getElementById('w5Selection');
+    w5Selection.textContent = (winners.west.winnerW1 && winners.west.winnerW4) ? `Winner: ${winners.west.winnerW5 || ''}` : 'Winner';
+    const w6Selection = document.getElementById('w6Selection');
+    w6Selection.textContent = (winners.west.winnerW2 && winners.west.winnerW3) ? `Winner: ${winners.west.winnerW6 || ''}` : 'Winner';
+    const e5Selection = document.getElementById('e5Selection');
+    e5Selection.textContent = (winners.east.winnerE1 && winners.east.winnerE4) ? `Winner: ${winners.east.winnerE5 || ''}` : 'Winner';
+    const e6Selection = document.getElementById('e6Selection');
+    e6Selection.textContent = (winners.east.winnerE2 && winners.east.winnerE3) ? `Winner: ${winners.east.winnerE6 || ''}` : 'Winner';
+
+    // Check if Semifinals winners have changed
+    const semifinalsChanged =
+      winners.west.winnerW5 !== previousSemifinalsWinners.w5 ||
+      winners.west.winnerW6 !== previousSemifinalsWinners.w6 ||
+      winners.east.winnerE5 !== previousSemifinalsWinners.e5 ||
+      winners.east.winnerE6 !== previousSemifinalsWinners.e6;
+
+    // Store current Semifinals winners for the next update
+    previousSemifinalsWinners.w5 = winners.west.winnerW5;
+    previousSemifinalsWinners.w6 = winners.west.winnerW6;
+    previousSemifinalsWinners.e5 = winners.east.winnerE5;
+    previousSemifinalsWinners.e6 = winners.east.winnerE6;
+
+    // Populate Conference Finals matchups and winner dropdowns only if Semifinals winners changed
+    if (semifinalsChanged) {
+      const w7Matchup = document.getElementById('w7Matchup');
+      w7Matchup.textContent = (winners.west.winnerW5 && winners.west.winnerW6 && winners.west.winnerW5 !== '' && winners.west.winnerW6 !== '') ? 
+        `${winners.west.winnerW5} vs ${winners.west.winnerW6}` : '';
+      const w7Select = document.getElementById('w7');
+      w7Select.innerHTML = '';
+      const w7Options = (winners.west.winnerW5 && winners.west.winnerW6 && winners.west.winnerW5 !== '' && winners.west.winnerW6 !== '') ? [
+        new Option('Select Winner', '', true, true),
+        new Option(winners.west.winnerW5, winners.west.winnerW5),
+        new Option(winners.west.winnerW6, winners.west.winnerW6)
+      ] : [new Option('Select Semifinals Winners', '', true, true)];
+      w7Options.forEach(option => w7Select.add(option));
+
+      const e7Matchup = document.getElementById('e7Matchup');
+      e7Matchup.textContent = (winners.east.winnerE5 && winners.east.winnerE6 && winners.east.winnerE5 !== '' && winners.east.winnerE6 !== '') ? 
+        `${winners.east.winnerE5} vs ${winners.east.winnerE6}` : '';
+      const e7Select = document.getElementById('e7');
+      e7Select.innerHTML = '';
+      const e7Options = (winners.east.winnerE5 && winners.east.winnerE6 && winners.east.winnerE5 !== '' && winners.east.winnerE6 !== '') ? [
+        new Option('Select Winner', '', true, true),
+        new Option(winners.east.winnerE5, winners.east.winnerE5),
+        new Option(winners.east.winnerE6, winners.east.winnerE6)
+      ] : [new Option('Select Semifinals Winners', '', true, true)];
+      e7Options.forEach(option => e7Select.add(option));
+    }
+
+    // Update Conference Finals winners and selections
+    winners.west.winnerW7 = document.getElementById('w7').value;
+    winners.east.winnerE7 = document.getElementById('e7').value;
+
+    const w7Selection = document.getElementById('w7Selection');
+    w7Selection.textContent = (winners.west.winnerW5 && winners.west.winnerW6) ? `Winner: ${winners.west.winnerW7 || ''}` : 'Winner';
+    const e7Selection = document.getElementById('e7Selection');
+    e7Selection.textContent = (winners.east.winnerE5 && winners.east.winnerE6) ? `Winner: ${winners.east.winnerE7 || ''}` : 'Winner';
+
+    // Check if Conference Finals winners have changed
+    const conferenceFinalsChanged =
+      winners.west.winnerW7 !== previousConferenceFinalsWinners.w7 ||
+      winners.east.winnerE7 !== previousConferenceFinalsWinners.e7;
+
+    // Store current Conference Finals winners for the next update
+    previousConferenceFinalsWinners.w7 = winners.west.winnerW7;
+    previousConferenceFinalsWinners.e7 = winners.east.winnerE7;
+
+    // Populate Finals matchups and winner dropdowns only if Conference Finals winners changed
+    if (conferenceFinalsChanged) {
+      const championMatchup = document.getElementById('championMatchup');
+      championMatchup.textContent = (winners.west.winnerW7 && winners.east.winnerE7 && winners.west.winnerW7 !== '' && winners.east.winnerE7 !== '') ? 
+        `${winners.west.winnerW7} vs ${winners.east.winnerE7}` : '';
+      const championSelect = document.getElementById('champion');
+      championSelect.innerHTML = '';
+      const championOptions = (winners.west.winnerW7 && winners.east.winnerE7 && winners.west.winnerW7 !== '' && winners.east.winnerE7 !== '') ? [
+        new Option('Select Winner', '', true, true),
+        new Option(winners.west.winnerW7, winners.west.winnerW7),
+        new Option(winners.east.winnerE7, winners.east.winnerE7)
+      ] : [new Option('Select Conference Winners', '', true, true)];
+      championOptions.forEach(option => championSelect.add(option));
+    }
+
+    // Update Finals winner and selection
+    winners.finals = document.getElementById('champion').value;
+    const championSelection = document.getElementById('championSelection');
+    championSelection.textContent = (winners.west.winnerW7 && winners.east.winnerE7) ? `Winner: ${winners.finals || ''}` : 'Winner';
+    bracket.finals = document.getElementById('champion').value;
+
+    // Update bracket object with final selections
+    bracket.west.w1 = winners.west.winnerW1;
+    bracket.west.w2 = winners.west.winnerW2;
+    bracket.west.w3 = winners.west.winnerW3;
+    bracket.west.w4 = winners.west.winnerW4;
+    bracket.west.w5 = winners.west.winnerW5;
+    bracket.west.w6 = winners.west.winnerW6;
+    bracket.west.w7 = winners.west.winnerW7;
+    bracket.east.e1 = winners.east.winnerE1;
+    bracket.east.e2 = winners.east.winnerE2;
+    bracket.east.e3 = winners.east.winnerE3;
+    bracket.east.e4 = winners.east.winnerE4;
+    bracket.east.e5 = winners.east.winnerE5;
+    bracket.east.e6 = winners.east.winnerE6;
+    bracket.east.e7 = winners.east.winnerE7;
+
+    console.log('Bracket updated:', bracket);
+    console.log('Winners updated:', winners);
+  } catch (error) {
+    console.error('Error in updateBracket:', error);
+  }
+}
+
+// Helper function to format the summary in the same format as the email
+function formatSummary(picks) {
+  return `
+Email: ${picks.email}
+Phone: ${picks.phone || 'N/A'}
+Comments: ${picks.comments || 'N/A'}
+Payment Method: ${picks.paymentMethod} - Envie Pago al ${picks.phone}
 
 Play-In Selections:
 
 Eastern Conference:
-No. 7 Seed: ${eastPlayIn7 || 'N/A'}
-No. 8 Seed: ${eastPlayIn8 || 'N/A'}
+No. 7 Seed: ${picks.eastPlayIn7 || 'N/A'}
+No. 8 Seed: ${picks.eastPlayIn8 || 'N/A'}
 Western Conference:
-No. 7 Seed: ${westPlayIn7 || 'N/A'}
-No. 8 Seed: ${westPlayIn8 || 'N/A'}
+No. 7 Seed: ${picks.westPlayIn7 || 'N/A'}
+No. 8 Seed: ${picks.westPlayIn8 || 'N/A'}
 
 Eastern Conference:
 First Round:
-${seriesResults[7] || 'N/A'}
-${seriesResults[8] || 'N/A'}
-${seriesResults[9] || 'N/A'}
-${seriesResults[10] || 'N/A'}
+${picks.seriesResults[7] || 'N/A'}
+${picks.seriesResults[8] || 'N/A'}
+${picks.seriesResults[9] || 'N/A'}
+${picks.seriesResults[10] || 'N/A'}
 Semifinals:
-${seriesResults[11] || 'N/A'}
-${seriesResults[12] || 'N/A'}
+${picks.seriesResults[11] || 'N/A'}
+${picks.seriesResults[12] || 'N/A'}
 Conference Final:
-${seriesResults[13] || 'N/A'}
+${picks.seriesResults[13] || 'N/A'}
 
 Western Conference:
 First Round:
-${seriesResults[0] || 'N/A'}
-${seriesResults[1] || 'N/A'}
-${seriesResults[2] || 'N/A'}
-${seriesResults[3] || 'N/A'}
+${picks.seriesResults[0] || 'N/A'}
+${picks.seriesResults[1] || 'N/A'}
+${picks.seriesResults[2] || 'N/A'}
+${picks.seriesResults[3] || 'N/A'}
 Semifinals:
-${seriesResults[4] || 'N/A'}
-${seriesResults[5] || 'N/A'}
+${picks.seriesResults[4] || 'N/A'}
+${picks.seriesResults[5] || 'N/A'}
 Conference Final:
-${seriesResults[6] || 'N/A'}
+${picks.seriesResults[6] || 'N/A'}
 
 Finals:
-${champion || 'N/A'} vs ${seriesResults[13]} vs ${seriesResults[6]}
+${picks.champion || 'N/A'} vs ${picks.seriesResults[13]} vs ${picks.seriesResults[6]}
 
-Winner: ${champion} (${seriesResults[14] || 'N/A'})
-MVP: ${mvp}
-Last Game Score: ${lastGameScore.join(' - ') || 'N/A'}
+Winner: ${picks.champion} (${picks.seriesResults[14] || 'N/A'})
+MVP: ${picks.mvp}
+Last Game Score: ${picks.lastGameScore.join(' - ') || 'N/A'}
 Thanks for participating in the NBA Playoff Pool 2025!
-    `.trim();
+  `.trim();
+}
 
-    const prediction = new Prediction({
-      westPlayIn7,
-      westPlayIn8,
-      eastPlayIn7,
-      eastPlayIn8,
-      seriesResults,
-      champion,
-      mvp,
-      lastGameScore,
-      paymentMethod,
-      name,
-      phone,
-      comments,
-      email,
-      formattedSummary
-    });
-    await prediction.save();
+// Function to reset the application and start over
+function startOver() {
+  // Reset all select elements to their default values
+  document.querySelectorAll('select').forEach(select => {
+    select.value = select.options[0].value; // Set to the first option (usually "Select" or default)
+  });
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'NPP2025 Prediction Summary',
-      text: formattedSummary
-    };
-    await transporter.sendMail(mailOptions);
-    console.log('Email sent to:', email);
+  // Clear the summary
+  document.getElementById('summary').innerText = '';
 
-    res.json({ message: 'Prediction saved and email sent', prediction });
-  } catch (error) {
-    console.error('Error submitting prediction:', error);
-    res.status(500).json({ error: 'Failed to submit prediction' });
+  // Reset bracket, winners, and previous selections
+  bracket = {
+    west: { playIn7: '', playIn8: '', w1: '', w2: '', w3: '', w4: '', w5: '', w6: '', w7: '' },
+    east: { playIn7: '', playIn8: '', e1: '', e2: '', e3: '', e4: '', e5: '', e6: '', e7: '' },
+    finals: ''
+  };
+
+  winners = {
+    west: { winnerW1: '', winnerW2: '', winnerW3: '', winnerW4: '', winnerW5: '', winnerW6: '', winnerW7: '' },
+    east: { winnerE1: '', winnerE2: '', winnerE3: '', winnerE4: '', winnerE5: '', winnerE6: '', winnerE7: '' },
+    finals: ''
+  };
+
+  previousPlayInSelections = { west7: '', west8: '', east7: '', east8: '' };
+  previousFirstRoundWinners = { w1: '', w2: '', w3: '', w4: '', e1: '', e2: '', e3: '', e4: '' };
+  previousSemifinalsWinners = { w5: '', w6: '', e5: '', e6: '' };
+  previousConferenceFinalsWinners = { w7: '', e7: '' };
+
+  // Hide the Start Over button
+  document.getElementById('startOver').style.display = 'none';
+
+  // Re-initialize the bracket
+  updateBracket();
+}
+
+// Function to submit prediction with validation
+function submitPrediction() {
+  // Capture Play-In selections
+  const westPlayIn7 = document.getElementById('west7').value;
+  const westPlayIn8 = document.getElementById('west8').value;
+  const eastPlayIn7 = document.getElementById('east7').value;
+  const eastPlayIn8 = document.getElementById('east8').value;
+
+  // Capture winners and series lengths for each round, including Finals
+  const winnersList = [
+    document.getElementById('w1').value, document.getElementById('w2').value, document.getElementById('w3').value,
+    document.getElementById('w4').value, document.getElementById('w5').value, document.getElementById('w6').value,
+    document.getElementById('w7').value, document.getElementById('e1').value, document.getElementById('e2').value,
+    document.getElementById('e3').value, document.getElementById('e4').value, document.getElementById('e5').value,
+    document.getElementById('e6').value, document.getElementById('e7').value, document.getElementById('champion').value
+  ];
+
+  const seriesLengths = [
+    document.getElementById('w1len').value, document.getElementById('w2len').value, document.getElementById('w3len').value,
+    document.getElementById('w4len').value, document.getElementById('w5len').value, document.getElementById('w6len').value,
+    document.getElementById('w7len').value, document.getElementById('e1len').value, document.getElementById('e2len').value,
+    document.getElementById('e3len').value, document.getElementById('e4len').value, document.getElementById('e5len').value,
+    document.getElementById('e6len').value, document.getElementById('e7len').value, document.getElementById('finalLen').value
+  ].map(Number);
+
+  // Combine winners and series lengths into a single array
+  const seriesResults = winnersList.map((winner, index) => {
+    return `${winner} -${seriesLengths[index]}`;
+  });
+
+  const picks = {
+    westPlayIn7,
+    westPlayIn8,
+    eastPlayIn7,
+    eastPlayIn8,
+    seriesResults,
+    champion: document.getElementById('champion').value,
+    mvp: document.getElementById('mvp').value,
+    lastGameScore: [
+      Number(document.getElementById('score1').value) || 0,
+      Number(document.getElementById('score2').value) || 0
+    ],
+    paymentMethod: document.getElementById('paymentMethod').value,
+    name: document.getElementById('name').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    comments: document.getElementById('comments').value.trim(),
+    email: document.getElementById('email').value.trim()
+  };
+
+  // Validation functions
+  const validateName = (name) => {
+    const nameRegex = /^[a-zA-Z\s'-]+$/; // Allow letters, spaces, hyphens, and apostrophes
+    return nameRegex.test(name) && name.length > 0 && !/^\s*$/.test(name) && !/[^a-zA-Z\s'-]/.test(name);
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email format: name@domain.com
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^\d{3}-\d{3}-\d{4}$/; // Format: 123-456-7890
+    return phoneRegex.test(phone);
+  };
+
+  const validateComments = (comments) => {
+    const commentsRegex = /^[a-zA-Z0-9\s.,!?'-]+$/; // Allow alphanumeric, spaces, and common punctuation
+    return commentsRegex.test(comments) || comments === '';
+  };
+
+  // Validation checks
+  if (!validateName(picks.name)) {
+    alert('Invalid name! Use only letters, spaces, hyphens, or apostrophes (e.g., "John Doe").');
+    return;
   }
-});
-
-// Route to display results
-app.get('/results', async (req, res) => {
-  try {
-    // Fetch the "clave" record
-    const claveRecord = await Prediction.findOne({
-      name: "CLAVE",
-      phone: "CLAVE",
-      comments: "CLAVE"
-    });
-
-    if (!claveRecord) {
-      return res.status(404).send('<h1>Error: Clave record not found</h1><p>Please ensure a record with name, phone, and comments set to "CLAVE" exists in the database.</p>');
-    }
-
-    // Fetch all predictions except the clave record
-    const predictions = await Prediction.find({
-      name: { $ne: "CLAVE" },
-      phone: { $ne: "CLAVE" },
-      comments: { $ne: "CLAVE" }
-    });
-
-    // Define possible teams and MVPs for Finals analysis
-    const possibleTeams = [
-      "Celtics", "Bucks", "Pacers", "Heat", "Knicks", "Cavaliers", "Magic", "Pistons", "Hawks", "Wizards",
-      "Nuggets", "Suns", "Warriors", "Lakers", "Clippers", "Grizzlies", "Rockets", "Pelicans", "Spurs", "Timberwolves", "Thunder"
-    ];
-    const possibleMVPs = [
-      "De Andre Hunter", "Ty Jerome", "Jaylen Brown", "Jayson Tatum", "Jalen Brunson", "Karl-Anthony Towns",
-      "Giannis Antetokounmpo", "Damian Lillard", "Tyrese Haliburton", "Bennedict Mathurin", "Cade Cunningham",
-      "Jaden Ivey", "Jimmy Butler", "Bam Adebayo", "Paolo Banchero", "Franz Wagner", "Shai Gilgeous-Alexander",
-      "Josh Giddey", "LeBron James", "Luka Dončić", "Nikola Jokić", "Jamal Murray", "Ja Morant", "Jaren Jackson Jr.",
-      "Jalen Green", "Jabari Smith Jr.", "Kawhi Leonard", "Paul George", "Stephen Curry", "J. Tatum"
-    ];
-
-    // Initialize Finals prediction analysis
-    const finalsWinnerCounts = possibleTeams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {});
-    const finalsMVPCounts = possibleMVPs.reduce((acc, mvp) => ({ ...acc, [mvp]: 0 }), {});
-
-    // Calculate scores for each prediction
-    const scoredPredictions = predictions.map(prediction => {
-      const scores = {
-        firstRound: [],
-        semifinals: [],
-        conferenceFinals: [],
-        finals: [],
-        totalScore: 0
-      };
-
-      // First Round (Indices 0-3: West w1-w4, 7-10: East e1-e4)
-      const firstRoundKeys = [
-        { key: 'w1', index: 0 }, { key: 'w2', index: 1 }, { key: 'w3', index: 2 }, { key: 'w4', index: 3 },
-        { key: 'e1', index: 7 }, { key: 'e2', index: 8 }, { key: 'e3', index: 9 }, { key: 'e4', index: 10 }
-      ];
-      firstRoundKeys.forEach(({ key, index }) => {
-        const predResult = prediction.seriesResults[index] || '';
-        const claveResult = claveRecord.seriesResults[index] || '';
-        const predWinner = predResult.split(' -')[0] || '';
-        const claveWinner = claveResult.split(' -')[0] || '';
-        const predGames = parseInt(predResult.split(' -')[1]) || 0;
-        const claveGames = parseInt(claveResult.split(' -')[1]) || 0;
-
-        const winnerMatch = predWinner === claveWinner;
-        const gamesMatch = predGames === claveGames;
-        const points = (winnerMatch ? 1 : 0) + (gamesMatch ? 1 : 0);
-
-        scores.firstRound.push({
-          key,
-          prediction: predResult,
-          result: claveResult,
-          winnerMatch: winnerMatch ? 'Yes' : 'No',
-          gamesMatch: gamesMatch ? 'Yes' : 'No',
-          points
-        });
-      });
-
-      // Semifinals (Indices 4-5: West w5-w6, 11-12: East e5-e6)
-      const semifinalsKeys = [
-        { key: 'w5', index: 4 }, { key: 'w6', index: 5 },
-        { key: 'e5', index: 11 }, { key: 'e6', index: 12 }
-      ];
-      semifinalsKeys.forEach(({ key, index }) => {
-        const predResult = prediction.seriesResults[index] || '';
-        const claveResult = claveRecord.seriesResults[index] || '';
-        const predWinner = predResult.split(' -')[0] || '';
-        const claveWinner = claveResult.split(' -')[0] || '';
-        const predGames = parseInt(predResult.split(' -')[1]) || 0;
-        const claveGames = parseInt(claveResult.split(' -')[1]) || 0;
-
-        const winnerMatch = predWinner === claveWinner;
-        const gamesMatch = predGames === claveGames;
-        const points = (winnerMatch ? 2 : 0) + (gamesMatch ? 1 : 0);
-
-        scores.semifinals.push({
-          key,
-          prediction: predResult,
-          result: claveResult,
-          winnerMatch: winnerMatch ? 'Yes' : 'No',
-          gamesMatch: gamesMatch ? 'Yes' : 'No',
-          points
-        });
-      });
-
-      // Conference Finals (Indices 6: West w7, 13: East e7)
-      const conferenceFinalsKeys = [
-        { key: 'w7', index: 6 },
-        { key: 'e7', index: 13 }
-      ];
-      conferenceFinalsKeys.forEach(({ key, index }) => {
-        const predResult = prediction.seriesResults[index] || '';
-        const claveResult = claveRecord.seriesResults[index] || '';
-        const predWinner = predResult.split(' -')[0] || '';
-        const claveWinner = claveResult.split(' -')[0] || '';
-        const predGames = parseInt(predResult.split(' -')[1]) || 0;
-        const claveGames = parseInt(claveResult.split(' -')[1]) || 0;
-
-        const winnerMatch = predWinner === claveWinner;
-        const gamesMatch = predGames === claveGames;
-        const points = (winnerMatch ? 3 : 0) + (gamesMatch ? 1 : 0);
-
-        scores.conferenceFinals.push({
-          key,
-          prediction: predResult,
-          result: claveResult,
-          winnerMatch: winnerMatch ? 'Yes' : 'No',
-          gamesMatch: gamesMatch ? 'Yes' : 'No',
-          points
-        });
-      });
-
-      // Finals (Index 14 for series, champion, and mvp fields)
-      const finalsKey = { key: 'finals', index: 14 };
-      const predResult = prediction.seriesResults[finalsKey.index] || '';
-      const claveResult = claveRecord.seriesResults[finalsKey.index] || '';
-      const predWinner = prediction.champion || '';
-      const claveWinner = claveRecord.champion || '';
-      const predGames = parseInt(predResult.split(' -')[1]) || 0;
-      const claveGames = parseInt(claveResult.split(' -')[1]) || 0;
-      const predMVP = prediction.mvp || '';
-      const claveMVP = claveRecord.mvp || '';
-      const predScore = prediction.lastGameScore || [0, 0];
-      const claveScore = claveRecord.lastGameScore || [0, 0];
-      const scoreDiff1 = Math.abs(predScore[0] - claveScore[0]); // Difference in winning score
-      const scoreDiff2 = Math.abs(predScore[1] - claveScore[1]); // Difference in losing score
-
-      const winnerMatch = predWinner === claveWinner;
-      const gamesMatch = predGames === claveGames;
-      const mvpMatch = predMVP === claveMVP;
-      const points = (winnerMatch ? 4 : 0) + (gamesMatch ? 1 : 0) + (mvpMatch ? 1 : 0);
-
-      scores.finals.push({
-        key: finalsKey.key,
-        prediction: `${predWinner} ${predResult.split(' -')[1] || ''}, ${predMVP}, ${predScore.join(' - ')}`,
-        result: `${claveWinner} ${claveResult.split(' -')[1] || ''}, ${claveMVP}, ${claveScore.join(' - ')}`,
-        winnerMatch: winnerMatch ? 'Yes' : 'No',
-        gamesMatch: gamesMatch ? 'Yes' : 'No',
-        mvpMatch: mvpMatch ? 'Yes' : 'No',
-        scoreDiff1: scoreDiff1, // Tiebreaker: difference in winning score
-        scoreDiff2: scoreDiff2, // Tiebreaker: difference in losing score
-        points
-      });
-
-      // Calculate total score
-      scores.totalScore = 
-        scores.firstRound.reduce((sum, match) => sum + match.points, 0) +
-        scores.semifinals.reduce((sum, match) => sum + match.points, 0) +
-        scores.conferenceFinals.reduce((sum, match) => sum + match.points, 0) +
-        scores.finals.reduce((sum, match) => sum + match.points, 0);
-
-      // Update Finals prediction counts
-      if (prediction.champion) {
-        const team = prediction.champion.replace(/^\d+\.\s*/, '');
-        if (finalsWinnerCounts.hasOwnProperty(team)) {
-          finalsWinnerCounts[team]++;
-        }
-      }
-      if (prediction.mvp) {
-        if (finalsMVPCounts.hasOwnProperty(prediction.mvp)) {
-          finalsMVPCounts[prediction.mvp]++;
-        }
-      }
-
-      return { prediction, scores };
-    });
-
-    // Sort predictions by total score for standings
-    scoredPredictions.sort((a, b) => b.scores.totalScore - a.scores.totalScore);
-
-    // Generate HTML content for the report
-    let reportContent = '';
-
-    // Generate report for each user
-    scoredPredictions.forEach(({ prediction, scores }) => {
-      const userName = prediction.name || 'Unknown';
-      reportContent += `
-        <div class="section">
-          <h2>${userName}: ${scores.totalScore} Points</h2>
-
-          <h3>First Round (1 point for winner, 1 for games)</h3>
-          <table>
-            <tr>
-              <th>Key</th>
-              <th>Prediction</th>
-              <th>Result</th>
-              <th>Winner Match</th>
-              <th>Games Match</th>
-              <th>Points</th>
-            </tr>
-      `;
-      scores.firstRound.forEach(match => {
-        reportContent += `
-            <tr>
-              <td>${match.key}</td>
-              <td>${match.prediction}</td>
-              <td>${match.result}</td>
-              <td>${match.winnerMatch}</td>
-              <td>${match.gamesMatch}</td>
-              <td>${match.points}</td>
-            </tr>
-        `;
-      });
-      const firstRoundWinners = scores.firstRound.filter(match => match.winnerMatch === 'Yes').length;
-      const firstRoundGames = scores.firstRound.filter(match => match.gamesMatch === 'Yes').length;
-      const firstRoundPoints = scores.firstRound.reduce((sum, match) => sum + match.points, 0);
-      reportContent += `
-            <tr>
-              <td colspan="3"><strong>Total</strong></td>
-              <td>${firstRoundWinners} winners</td>
-              <td>${firstRoundGames} games</td>
-              <td>${firstRoundPoints}</td>
-            </tr>
-          </table>
-
-          <h3>Semifinals (2 points for winner, 1 for games)</h3>
-          <table>
-            <tr>
-              <th>Key</th>
-              <th>Prediction</th>
-              <th>Result</th>
-              <th>Winner Match</th>
-              <th>Games Match</th>
-              <th>Points</th>
-            </tr>
-      `;
-      scores.semifinals.forEach(match => {
-        reportContent += `
-            <tr>
-              <td>${match.key}</td>
-              <td>${match.prediction}</td>
-              <td>${match.result}</td>
-              <td>${match.winnerMatch}</td>
-              <td>${match.gamesMatch}</td>
-              <td>${match.points}</td>
-            </tr>
-        `;
-      });
-      const semifinalsWinners = scores.semifinals.filter(match => match.winnerMatch === 'Yes').length;
-      const semifinalsGames = scores.semifinals.filter(match => match.gamesMatch === 'Yes').length;
-      const semifinalsPoints = scores.semifinals.reduce((sum, match) => sum + match.points, 0);
-      reportContent += `
-            <tr>
-              <td colspan="3"><strong>Total</strong></td>
-              <td>${semifinalsWinners} winners</td>
-              <td>${semifinalsGames} games</td>
-              <td>${semifinalsPoints}</td>
-            </tr>
-          </table>
-
-          <h3>Conference Finals (3 points for winner, 1 for games)</h3>
-          <table>
-            <tr>
-              <th>Key</th>
-              <th>Prediction</th>
-              <th>Result</th>
-              <th>Winner Match</th>
-              <th>Games Match</th>
-              <th>Points</th>
-            </tr>
-      `;
-      scores.conferenceFinals.forEach(match => {
-        reportContent += `
-            <tr>
-              <td>${match.key}</td>
-              <td>${match.prediction}</td>
-              <td>${match.result}</td>
-              <td>${match.winnerMatch}</td>
-              <td>${match.gamesMatch}</td>
-              <td>${match.points}</td>
-            </tr>
-        `;
-      });
-      const confFinalsWinners = scores.conferenceFinals.filter(match => match.winnerMatch === 'Yes').length;
-      const confFinalsGames = scores.conferenceFinals.filter(match => match.gamesMatch === 'Yes').length;
-      const confFinalsPoints = scores.conferenceFinals.reduce((sum, match) => sum + match.points, 0);
-      reportContent += `
-            <tr>
-              <td colspan="3"><strong>Total</strong></td>
-              <td>${confFinalsWinners} winners</td>
-              <td>${confFinalsGames} games</td>
-              <td>${confFinalsPoints}</td>
-            </tr>
-          </table>
-
-          <h3>Finals (4 points for winner, 1 for games, 1 for MVP)</h3>
-          <table>
-            <tr>
-              <th>Key</th>
-              <th>Prediction</th>
-              <th>Result</th>
-              <th>Winner Match</th>
-              <th>Games Match</th>
-              <th>MVP Match</th>
-              <th>Score Diff (Win)</th>
-              <th>Score Diff (Loss)</th>
-              <th>Points</th>
-            </tr>
-      `;
-      scores.finals.forEach(match => {
-        reportContent += `
-            <tr>
-              <td>${match.key}</td>
-              <td>${match.prediction}</td>
-              <td>${match.result}</td>
-              <td>${match.winnerMatch}</td>
-              <td>${match.gamesMatch}</td>
-              <td>${match.mvpMatch}</td>
-              <td>${match.scoreDiff1}</td>
-              <td>${match.scoreDiff2}</td>
-              <td>${match.points}</td>
-            </tr>
-        `;
-      });
-      const finalsWinners = scores.finals.filter(match => match.winnerMatch === 'Yes').length;
-      const finalsGames = scores.finals.filter(match => match.gamesMatch === 'Yes').length;
-      const finalsMVPs = scores.finals.filter(match => match.mvpMatch === 'Yes').length;
-      const finalsPoints = scores.finals.reduce((sum, match) => sum + match.points, 0);
-      reportContent += `
-            <tr>
-              <td colspan="5"><strong>Total</strong></td>
-              <td>${finalsWinners}</td>
-              <td>${finalsGames}</td>
-              <td>${finalsMVPs}</td>
-              <td></td>
-              <td>${finalsPoints}</td>
-            </tr>
-          </table>
-
-          <p><strong>Total Expected Score: ${scores.totalScore} points</strong></p>
-        </div>
-      `;
-    });
-
-    // Standings
-    reportContent += `
-      <div class="standings">
-        <h2>Standings</h2>
-    `;
-    scoredPredictions.forEach(({ prediction, scores }) => {
-      const userName = prediction.name || 'Unknown';
-      reportContent += `<p>${userName}: ${scores.totalScore} points</p>`;
-    });
-    reportContent += `</div>`;
-
-    // Finals Prediction Analysis
-    reportContent += `
-      <div class="prediction-analysis">
-        <h2>Finals Prediction Analysis</h2>
-        <h3>Finals Winner Predictions</h3>
-    `;
-    for (const [team, count] of Object.entries(finalsWinnerCounts)) {
-      reportContent += `<p>${team}: ${count} users</p>`;
-    }
-    reportContent += `<h3>Finals MVP Predictions</h3>`;
-    for (const [mvp, count] of Object.entries(finalsMVPCounts)) {
-      reportContent += `<p>${mvp}: ${count} users</p>`;
-    }
-    reportContent += `</div>`;
-
-    // Read the results.html template
-    const templatePath = path.join(__dirname, 'public', 'results.html');
-    let template = fs.readFileSync(templatePath, 'utf8');
-
-    // Inject the report content into the template
-    template = template.replace('{{resultsContent}}', reportContent);
-
-    // Send the rendered HTML
-    res.send(template);
-  } catch (error) {
-    console.error('Error generating results:', error);
-    res.status(500).send('<h1>Error generating results</h1><p>Please check the server logs for details.</p>');
+  if (!validateEmail(picks.email)) {
+    alert('Invalid email! Use a valid format (e.g., "name@domain.com").');
+    return;
   }
-});
+  if (!validatePhone(picks.phone)) {
+    alert('Invalid phone! Use the format "123-456-7890".');
+    return;
+  }
+  if (!validateComments(picks.comments)) {
+    alert('Invalid comments! Use only letters, numbers, spaces, or common punctuation (e.g., periods, commas).');
+    return;
+  }
 
-// Redirect root to results page (optional, can be removed if not needed)
-app.get('/', (req, res) => {
-  res.redirect('/results');
-});
+  // Additional validation
+  if (picks.seriesResults.some(result => !result || result.includes(' -undefined')) || !picks.champion || !picks.mvp || picks.lastGameScore.some(score => isNaN(score)) || !picks.paymentMethod) {
+    alert('Please complete all selections');
+    return;
+  }
+  if (picks.lastGameScore[0] <= picks.lastGameScore[1]) {
+    alert('Winning score must be higher than losing score');
+    return;
+  }
+  if (!seriesLengths.every(length => [4, 5, 6, 7].includes(length))) {
+    alert('Series length must be between 4 and 7 games');
+    return;
+  }
 
-// Start Server with dynamic port for Render
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  fetch('/api/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(picks)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      alert(data.error);
+    } else {
+      document.getElementById('summary').innerText = formatSummary(picks);
+      alert('Prediction submitted successfully!');
+      // Show the Start Over button
+      document.getElementById('startOver').style.display = 'block';
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('An error occurred while submitting your prediction.');
+  });
+}

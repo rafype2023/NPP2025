@@ -492,7 +492,7 @@ function startOver() {
   updateBracket();
 }
 
-// Placeholder for submission logic
+// Function to submit prediction with validation
 function submitPrediction() {
   // Capture Play-In selections
   const westPlayIn7 = document.getElementById('west7').value;
@@ -527,7 +527,7 @@ function submitPrediction() {
     westPlayIn8,
     eastPlayIn7,
     eastPlayIn8,
-    seriesResults, // Combined winner and series length (now includes Finals at index 14)
+    seriesResults,
     champion: document.getElementById('champion').value,
     mvp: document.getElementById('mvp').value,
     lastGameScore: [
@@ -535,14 +535,53 @@ function submitPrediction() {
       Number(document.getElementById('score2').value) || 0
     ],
     paymentMethod: document.getElementById('paymentMethod').value,
-    name: document.getElementById('name').value,
-    phone: document.getElementById('phone').value,
-    comments: document.getElementById('comments').value,
-    email: document.getElementById('email').value
+    name: document.getElementById('name').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    comments: document.getElementById('comments').value.trim(),
+    email: document.getElementById('email').value.trim()
   };
 
-  // Validation
-  if (picks.seriesResults.some(result => !result || result.includes(' -undefined')) || !picks.champion || !picks.mvp || picks.lastGameScore.some(score => isNaN(score)) || !picks.paymentMethod || !picks.name || !picks.phone || !picks.email) {
+  // Validation functions
+  const validateName = (name) => {
+    const nameRegex = /^[a-zA-Z\s'-]+$/; // Allow letters, spaces, hyphens, and apostrophes
+    return nameRegex.test(name) && name.length > 0 && !/^\s*$/.test(name) && !/[^a-zA-Z\s'-]/.test(name);
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email format: name@domain.com
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^\d{3}-\d{3}-\d{4}$/; // Format: 123-456-7890
+    return phoneRegex.test(phone);
+  };
+
+  const validateComments = (comments) => {
+    const commentsRegex = /^[a-zA-Z0-9\s.,!?'-]+$/; // Allow alphanumeric, spaces, and common punctuation
+    return commentsRegex.test(comments) || comments === '';
+  };
+
+  // Validation checks
+  if (!validateName(picks.name)) {
+    alert('Invalid name! Use only letters, spaces, hyphens, or apostrophes (e.g., "John Doe").');
+    return;
+  }
+  if (!validateEmail(picks.email)) {
+    alert('Invalid email! Use a valid format (e.g., "name@domain.com").');
+    return;
+  }
+  if (!validatePhone(picks.phone)) {
+    alert('Invalid phone! Use the format "123-456-7890".');
+    return;
+  }
+  if (!validateComments(picks.comments)) {
+    alert('Invalid comments! Use only letters, numbers, spaces, or common punctuation (e.g., periods, commas).');
+    return;
+  }
+
+  // Additional validation
+  if (picks.seriesResults.some(result => !result || result.includes(' -undefined')) || !picks.champion || !picks.mvp || picks.lastGameScore.some(score => isNaN(score)) || !picks.paymentMethod) {
     alert('Please complete all selections');
     return;
   }
