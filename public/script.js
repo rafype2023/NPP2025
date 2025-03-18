@@ -111,12 +111,12 @@ function updateBracket() {
       w1Options.forEach(option => w1Select.add(option));
 
       const w2Matchup = document.getElementById('w2Matchup');
-      w2Matchup.textContent = west7 ? `2. Grizzlies vs ${west7}` : '2. Grizzlies vs Select 7th';
+      w2Matchup.textContent = west7 ? `2. Houston vs ${west7}` : '2. Houston vs Select 7th';
       const w2Select = document.getElementById('w2');
       w2Select.innerHTML = '';
       const w2Options = [
         new Option('Select Winner', '', true, true),
-        new Option('2. Grizzlies', '2. Grizzlies'),
+        new Option('2. Houston', '2. Houston'),
         ...(west7 ? [new Option(west7, west7)] : [])
       ];
       w2Options.forEach(option => w2Select.add(option));
@@ -133,13 +133,13 @@ function updateBracket() {
       w3Options.forEach(option => w3Select.add(option));
 
       const w4Matchup = document.getElementById('w4Matchup');
-      w4Matchup.textContent = '4. Lakers vs 5. Rockets';
+      w4Matchup.textContent = '4. Memphis vs 5. Lakers';
       const w4Select = document.getElementById('w4');
       w4Select.innerHTML = '';
       const w4Options = [
         new Option('Select Winner', '', true, true),
-        new Option('4. Lakers', '4. Lakers'),
-        new Option('5. Rockets', '5. Rockets')
+        new Option('4. Memphis', '4. Memphis'),
+        new Option('5. Lakers', '5. Lakers')
       ];
       w4Options.forEach(option => w4Select.add(option));
 
