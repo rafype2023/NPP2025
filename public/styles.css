@@ -19,6 +19,8 @@ h1 {
   font-size: 2.5em;
   margin-bottom: 20px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  display: inline-block; /* Allow the icon to sit beside it */
+  vertical-align: middle; /* Align with the icon */
 }
 
 h3 {
@@ -217,10 +219,3 @@ button:hover {
 }
 
 /* Adjust h1 to accommodate the icon */
-h1 {
-  font-size: 2.5em;
-  margin-bottom: 20px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-  display: inline-block; /* Allow the icon to sit beside it */
-  vertical-align: middle; /* Align with the icon */
-}
