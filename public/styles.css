@@ -198,3 +198,29 @@ button:hover {
   background: #ffd700;
   margin: 0 auto 20px;
 }
+
+/* Ensure the stats link and icon are visible */
+#stats-link {
+  color: #ffd700; /* Gold to match your theme and stand out */
+  text-decoration: none; /* Remove underline */
+  display: inline-block; /* Ensure it respects margins and alignment */
+  vertical-align: middle; /* Align with the h1 */
+  z-index: 10; /* Bring it above background layers */
+}
+
+#stats-link i {
+  transition: color 0.3s ease; /* Smooth color change on hover */
+}
+
+#stats-link:hover i {
+  color: #e6c200; /* Slightly darker gold on hover */
+}
+
+/* Adjust h1 to accommodate the icon */
+h1 {
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  display: inline-block; /* Allow the icon to sit beside it */
+  vertical-align: middle; /* Align with the icon */
+}
