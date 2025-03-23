@@ -47,6 +47,7 @@ h3 {
   width: 48%;
   margin: 1%;
   position: relative;
+  overflow: visible; /* Ensure lines aren't clipped */
 }
 
 .conference h3 {
@@ -85,16 +86,18 @@ h3 {
   align-items: center;
   justify-content: space-between;
   position: relative;
+  min-height: 40px;
+  padding-right: 150px; /* Add padding to create space for the line */
 }
 
 .matchup::after {
   content: '';
   position: absolute;
-  width: 100px;
+  width: 50px; /* Shorten the line to 50px for better proportionality */
   height: 2px;
-  background: #fff;
+  background: #ffd700; /* Change to gold to match your theme */
   top: 50%;
-  left: 100%;
+  left: calc(100% - 140px); /* Start the line after the content */
   transform: translateY(-50%);
 }
 
@@ -110,6 +113,12 @@ h3 {
   text-align: left;
   color: #ffd700;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Ensure the selection text doesn't overlap with the line */
+.matchup span[id$="Selection"] {
+  margin-left: 10px; /* Add some spacing */
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .matchup select {
@@ -197,25 +206,3 @@ button:hover {
   display: block;
   width: 50%;
   height: 2px;
-  background: #ffd700;
-  margin: 0 auto 20px;
-}
-
-/* Ensure the stats link and icon are visible */
-#stats-link {
-  color: #ffd700; /* Gold to match your theme and stand out */
-  text-decoration: none; /* Remove underline */
-  display: inline-block; /* Ensure it respects margins and alignment */
-  vertical-align: middle; /* Align with the h1 */
-  z-index: 10; /* Bring it above background layers */
-}
-
-#stats-link i {
-  transition: color 0.3s ease; /* Smooth color change on hover */
-}
-
-#stats-link:hover i {
-  color: #e6c200; /* Slightly darker gold on hover */
-}
-
-/* Adjust h1 to accommodate the icon */
