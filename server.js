@@ -516,6 +516,9 @@ app.get('/results', async (req, res) => {
               <th>Predicted Games</th>
               <th>Predicted MVP</th>
               <th>Predicted Score</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Comments</th>
               <th>Clave Winner</th>
               <th>Clave Games</th>
               <th>Clave MVP</th>
@@ -536,6 +539,9 @@ app.get('/results', async (req, res) => {
               <td>${match.predGames}</td>
               <td>${match.predMVP}</td>
               <td>${match.predScore}</td>
+              <td>${prediction.email}</td>
+              <td>${prediction.phone || 'N/A'}</td>
+              <td>${prediction.comments || 'N/A'}</td>
               <td>${match.claveWinner}</td>
               <td>${match.claveGames}</td>
               <td>${match.claveMVP}</td>
@@ -555,7 +561,7 @@ app.get('/results', async (req, res) => {
       const finalsPoints = scores.finals.reduce((sum, match) => sum + match.points, 0);
       reportContent += `
             <tr>
-              <td colspan="10"><strong>Total</strong></td>
+              <td colspan="13"><strong>Total</strong></td>
               <td>${finalsWinners}</td>
               <td>${finalsGames}</td>
               <td>${finalsMVPs}</td>
