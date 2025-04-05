@@ -167,24 +167,24 @@ function updateBracket() {
       e2Options.forEach(option => e2Select.add(option));
 
       const e3Matchup = document.getElementById('e3Matchup');
-      e3Matchup.textContent = '3. Knicks vs 6. Pistons';
+      e3Matchup.textContent = '3. Knicks vs 6. Bucks';
       const e3Select = document.getElementById('e3');
       e3Select.innerHTML = '';
       const e3Options = [
         new Option('Select Winner', '', true, true),
         new Option('3. Knicks', '3. Knicks'),
-        new Option('6. Pistons', '6. Pistons')
+        new Option('6. Bucks', '6. Bucks')
       ];
       e3Options.forEach(option => e3Select.add(option));
 
       const e4Matchup = document.getElementById('e4Matchup');
-      e4Matchup.textContent = '4. Bucks vs 5. Pacers';
+      e4Matchup.textContent = '4. Pacers vs 5. Pistons';
       const e4Select = document.getElementById('e4');
       e4Select.innerHTML = '';
       const e4Options = [
         new Option('Select Winner', '', true, true),
-        new Option('4. Bucks', '4. Bucks'),
-        new Option('5. Pacers', '5. Pacers')
+        new Option('4. Pacers', '4. Pacers'),
+        new Option('5. Pistons', '5. Pistons')
       ];
       e4Options.forEach(option => e4Select.add(option));
     }
