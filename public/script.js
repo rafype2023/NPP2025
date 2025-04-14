@@ -133,7 +133,7 @@ function updateBracket() {
       w3Options.forEach(option => w3Select.add(option));
 
       const w4Matchup = document.getElementById('w4Matchup');
-      w4Matchup.textContent = '4. Nuggets vs 5. Clippers';
+      w4Matchup.textContent = '4. Denver vs 5. Clippers';
       const w4Select = document.getElementById('w4');
       w4Select.innerHTML = '';
       const w4Options = [
