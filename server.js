@@ -104,7 +104,7 @@ app.post('/api/submit', async (req, res) => {
 Email: ${email}
 Phone: ${phone || 'N/A'}
 Comments: ${comments || 'N/A'}
-Payment Method: ${paymentMethod} - Envie Pago al ${phone}
+Payment Method: ${paymentMethod} 
 
 Play-In Selections:
 
@@ -145,6 +145,9 @@ ${champion || 'N/A'} vs ${seriesResults[13]} vs ${seriesResults[6]}
 Winner: ${champion} (${seriesResults[14] || 'N/A'})
 MVP: ${mvp}
 Last Game Score: ${lastGameScore.join(' - ') || 'N/A'}
+
+ PAGOS - Pay Pal a rafyperez - Ath Movil al 787-918-1644
+
 Thanks for participating in the NBA Playoff Pool 2025!
     `.trim();
 
