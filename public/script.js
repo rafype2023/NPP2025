@@ -138,7 +138,7 @@ function updateBracket() {
       w4Select.innerHTML = '';
       const w4Options = [
         new Option('Select Winner', '', true, true),
-        new Option('4. Nuggets', '4. Nuggets'),
+        new Option('4. Denver', '4. Denver'),
         new Option('5. Clippers, '5. Clippers')
       ];
       w4Options.forEach(option => w4Select.add(option));
