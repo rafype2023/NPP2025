@@ -412,7 +412,7 @@ function formatSummary(picks) {
 Email: ${picks.email}
 Phone: ${picks.phone || 'N/A'}
 Comments: ${picks.comments || 'N/A'}
-Payment Method: ${picks.paymentMethod} - Envie Pago al ${picks.phone}
+Payment Method: PayPal:rafyperez@hotmail.com / ATH-MOVIL Envie Pago al 787-918-1644
 
 Play-In Selections:
 
