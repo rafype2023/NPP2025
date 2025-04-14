@@ -146,7 +146,7 @@ Winner: ${champion} (${seriesResults[14] || 'N/A'})
 MVP: ${mvp}
 Last Game Score: ${lastGameScore.join(' - ') || 'N/A'}
 
- PAGOS - Pay Pal a rafyperez - Ath Movil al 787-918-1644
+ PAGOS - Pay Pal a rafyperez@hotmail.com - Ath Movil al 787-918-1644
 
 Thanks for participating in the NBA Playoff Pool 2025!
     `.trim();
