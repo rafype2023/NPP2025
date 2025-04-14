@@ -139,7 +139,7 @@ function updateBracket() {
       const w4Options = [
         new Option('Select Winner', '', true, true),
         new Option('4. Denver', '4. Denver'),
-        new Option('5. Clippers, '5. Clippers')
+        new Option('5. Clippers', '5. Clippers')
       ];
       w4Options.forEach(option => w4Select.add(option));
 
