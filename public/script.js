@@ -172,8 +172,8 @@ function updateBracket() {
       e3Select.innerHTML = '';
       const e3Options = [
         new Option('Select Winner', '', true, true),
-        new Option('3. Knicks', '3. Knicks'),
-        new Option('6. Pistons', '6. Pistons')
+        new Option('3. Knicks, '3. Knicks'),
+        new Option('6. Pistons, '6. Pistons')
       ];
       e3Options.forEach(option => e3Select.add(option));
 
